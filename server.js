@@ -17,21 +17,28 @@ const RECIPES_FOLDER = path.join(
   "../progettoVue/public/images/recipes"
 );
 
-// Assicurati che la cartella esista
+// Verifica cartella
 const fs = require("fs");
 if (!fs.existsSync(RECIPES_FOLDER)) {
   fs.mkdirSync(RECIPES_FOLDER, { recursive: true });
 }
 
-// Endpoint upload
+app.get("/ping", (req, res) => {
+  res.json({ status: "ok", message: "Upload server attivo" });
+});
+
+// Creazione route upload
 app.post("/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Nessun file caricato" });
     }
+    console.log("req.body:", req.body);
+    console.log("req.file:", req.file);
 
-    const ext = path.extname(req.file.originalname);
-    const baseName = Date.now(); // nome univoco
+    const filename = req.body.filename || req.file.originalname;
+    const ext = path.extname(filename);
+    const baseName = path.basename(filename, ext);
     const filenameOriginal = `${baseName}${ext}`;
     const filenameThumb = `T_${baseName}${ext}`;
 
@@ -48,13 +55,10 @@ app.post("/upload", upload.single("file"), async (req, res) => {
       .resize(640, 640, { fit: "cover", position: "center" })
       .toFile(thumbPath);
 
-    res.json({
-      original: `/images/recipes/${filenameOriginal}`,
-      thumbnail: `/images/recipes/${filenameThumb}`,
-    });
+    res.json({ message: "Upload OK" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Errore durante l’upload" });
+    res.status(500).json({ error: err.message });
   }
 });
 
